@@ -4,10 +4,12 @@
 <%@ include file="../common/navigation.jsp" %>
 
 <section class="me-4">
-    <h2 class="h3 mb-3 fw-normel">成績参照</h2>
-    
-    <div class="bg-light p-3 mb-4">
+    <h2 class="h3 mb-3 fw-normal">成績参照</h2>
+
+    <%-- 科目情報からの検索フォーム --%>
+    <div class="bg-light p-3 mb-4 border">
         <form action="TestList.action" method="get">
+            <input type="hidden" name="f" value="sj">
             <div class="row g-3">
                 <div class="col-md-3">
                     <label class="form-label">入学年度</label>
@@ -40,42 +42,43 @@
                     <button type="submit" class="btn btn-secondary">検索</button>
                 </div>
             </div>
+            <c:if test="${not empty sj_error}">
+                <div class="text-danger mt-2">${sj_error}</div>
+            </c:if>
         </form>
     </div>
 
-    <c:choose>
-        <c:when test="${not empty tests}">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>入学年度</th>
-                        <th>クラス</th>
-                        <th>学生番号</th>
-                        <th>氏名</th>
-                        <th>回数</th>
-                        <th>点数</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <c:forEach var="test" items="${tests}">
-                        <tr>
-                            <td>${param.f1}</td>
-                            <td>${test.classNum}</td>
-                            <td>${test.student.no}</td>
-                            <td>${test.student.name}</td>
-                            <td>${test.no}</td>
-                            <td>${test.point}</td>
-                        </tr>
-                    </c:forEach>
-                </tbody>
-            </table>
-        </c:when>
-        <c:otherwise>
-            <c:if test="${not empty param.f1}">
-                <p>成績情報が存在しませんでした</p>
+    <hr>
+
+    <%-- 学生情報からの検索フォーム --%>
+    <div class="bg-light p-3 mb-4 border">
+        <form action="TestList.action" method="get">
+            <input type="hidden" name="f" value="st">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">学生番号</label>
+                    <input type="text" name="f4" class="form-control" value="${param.f4}" placeholder="学生番号を入力してください" maxlength="10" required>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-secondary">検索</button>
+                </div>
+            </div>
+            <c:if test="${not empty st_error}">
+                <div class="text-danger mt-2">${st_error}</div>
             </c:if>
-        </c:otherwise>
+        </form>
+    </div>
+
+    <%-- 検索結果の表示エリア (条件に応じてインクルード) --%>
+    <c:choose>
+        <c:when test="${param.f == 'sj' and empty sj_error}">
+            <jsp:include page="test_list_subject.jsp" />
+        </c:when>
+        <c:when test="${param.f == 'st' and empty st_error}">
+            <jsp:include page="test_list_student.jsp" />
+        </c:when>
     </c:choose>
+
 </section>
 
 <%@ include file="../common/footer.jsp" %>
