@@ -2,42 +2,58 @@ package dao;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.List;
 
+import javax.security.auth.Subject;
+
+import bean.School;
+import bean.Student;
 import bean.Test;
 
 public class TestDao extends Dao {
-    
-    // 成績を保存・更新するメソッド
-    public boolean save(List<Test> testList) throws Exception {
+
+    /**
+     * 指定された条件で成績一覧を取得する
+     */
+    public List<Test> filter(int entYear, String classNum, Subject subject, School school) throws Exception {
+        List<Test> list = new ArrayList<>();
         Connection connection = getConnection();
         PreparedStatement statement = null;
-        int count = 0;
+
+        // 学生テーブルと結合して、入学年度やクラスで絞り込む
+        String sql = "SELECT t.STUDENT_NO, s.NAME, t.CLASS_NUM, t.NO, t.POINT " +
+                     "FROM TEST t " +
+                     "JOIN STUDENT s ON t.STUDENT_NO = s.NO " +
+                     "WHERE s.ENT_YEAR = ? AND t.CLASS_NUM = ? AND t.SUBJECT_CD = ? AND t.SCHOOL_CD = ? " +
+                     "ORDER BY t.STUDENT_NO ASC, t.NO ASC";
 
         try {
-            // 既にデータがある場合はUPDATE、無い場合はINSERTする処理（MERGE文などの例）
-            // H2データベースのMERGE文を利用する想定
-            String sql = "MERGE INTO TEST (STUDENT_NO, SUBJECT_CD, SCHOOL_CD, NO, POINT) KEY(STUDENT_NO, SUBJECT_CD, NO) VALUES (?, ?, ?, ?, ?)";
             statement = connection.prepareStatement(sql);
+            statement.setInt(1, entYear);
+            statement.setString(2, classNum);
+            statement.setString(3, subject.getCd());
+            statement.setString(4, school.getCd());
+            ResultSet rSet = statement.executeQuery();
 
-            for (Test test : testList) {
-                statement.setString(1, test.getStudent().getNo());
-                statement.setString(2, test.getSubject().getCd());
-                statement.setString(3, test.getSchool().getCd());
-                statement.setInt(4, test.getNo());
-                statement.setInt(5, test.getPoint());
-                statement.addBatch();
-                count++;
+            while (rSet.next()) {
+                Test test = new Test();
+                Student student = new Student();
+                student.setNo(rSet.getString("STUDENT_NO"));
+                student.setName(rSet.getString("NAME"));
+                test.setStudent(student);
+                test.setClassNum(rSet.getString("CLASS_NUM"));
+                test.setNo(rSet.getInt("NO"));
+                test.setPoint(rSet.getInt("POINT"));
+                list.add(test);
             }
-            int[] results = statement.executeBatch();
-            return results.length == count;
         } catch (Exception e) {
             throw e;
         } finally {
-            if (statement != null) {
-                statement.close();
-            }
+            if (statement != null) statement.close();
             connection.close();
         }
+        return list;
     }
 }
