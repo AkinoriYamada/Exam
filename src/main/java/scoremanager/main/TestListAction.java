@@ -31,7 +31,6 @@ public class TestListAction extends Action {
         ClassNumDao cDao = new ClassNumDao();
         SubjectDao sDao = new SubjectDao();
         
-        // 入学年度リスト（現在年から過去10年などを生成）
         List<Integer> entYearSet = new ArrayList<>();
         int currentYear = LocalDate.now().getYear();
         for (int i = currentYear - 10; i <= currentYear + 1; i++) {
@@ -43,7 +42,7 @@ public class TestListAction extends Action {
 
         TestDao tDao = new TestDao();
 
-        // 科目・クラス検索の場合
+        // 1. 科目・クラス検索 (f=sj) の場合
         if ("sj".equals(f)) {
             String entYearStr = req.getParameter("f1");
             String classNum = req.getParameter("f2");
@@ -52,18 +51,17 @@ public class TestListAction extends Action {
             if (entYearStr != null && classNum != null && subjectCd != null &&
                 !entYearStr.equals("0") && !classNum.equals("0") && !subjectCd.equals("0")) {
                 
-                Subject subject = new Subject();
-                subject.setCd(subjectCd);
-                
+                Subject subject = sDao.get(subjectCd, teacher.getSchool());
                 List<TestListSubject> subjects = tDao.filter(Integer.parseInt(entYearStr), classNum, subject, teacher.getSchool());
-                req.setAttribute("subjects", subjects);
-                req.setAttribute("subject_name", sDao.get(subjectCd, teacher.getSchool()).getName());
+                
+                req.setAttribute("tests", subjects);
+                req.setAttribute("subject", subject);
             } else {
-                req.setAttribute("sj_error", "入学年度とクラスと科目を選択してください");
+                req.setAttribute("error", "入学年度とクラスと科目を選択してください");
             }
         }
         
-        // 学生番号検索の場合
+        // 2. 学生番号検索 (f=st) の場合
         else if ("st".equals(f)) {
             String studentNo = req.getParameter("f4");
             
@@ -76,14 +74,14 @@ public class TestListAction extends Action {
                     req.setAttribute("studentTests", studentTests);
                     req.setAttribute("student", student);
                 } else {
-                    req.setAttribute("st_error", "該当する学生が存在しません");
+                    req.setAttribute("error", "学生情報が存在しませんでした");
                 }
             } else {
-                req.setAttribute("st_error", "学生番号を入力してください");
+                req.setAttribute("error", "学生番号を入力してください");
             }
         }
 
-        // 基本のJSPへフォワード（中で結果JSPをincludeする）
+        // 成績参照画面へフォワード
         req.getRequestDispatcher("test_list.jsp").forward(req, res);
     }
 }
