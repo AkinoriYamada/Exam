@@ -4,16 +4,15 @@
 	<c:param name="title">得点管理システム</c:param>
 	<c:param name="content">
 		<section class="me-4">
-			<h2 class="h3 mb-3 fw-norma bg-secondary bg-opacity-10 py-2 px-4">科目管理　変更</h2>
+			<h2 class="h3 mb-3 fw-norma bg-secondary bg-opacity-10 py-2 px-4">科目変更</h2>
 			
 			<c:if test="${not empty error}">
 				<div class="alert alert-danger mx-3">${error}</div>
 			</c:if>
 
-			<form action="SubjectUpdateExecute.action" method="post" class="mx-3">
+			<form action="SubjectUpdateExecute.action" method="post" class="mx-3" style="max-width: 400px;">
 				<div class="mb-3">
 					<label class="form-label">科目コード</label>
-					<%-- 変更不可のためreadonlyを設定 --%>
 					<input type="text" name="cd" class="form-control-plaintext border-bottom" value="${cd}" readonly>
 				</div>
 				<div class="mb-3">

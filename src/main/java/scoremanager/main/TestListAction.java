@@ -24,10 +24,9 @@ public class TestListAction extends Action {
         HttpSession session = req.getSession();
         Teacher teacher = (Teacher) session.getAttribute("user");
 
-        // 検索タイプの取得 (sj:科目検索, st:学生検索)
         String f = req.getParameter("f");
 
-        // 共通プルダウンリストの準備
+        // プルダウン用のリストを準備
         ClassNumDao cDao = new ClassNumDao();
         SubjectDao sDao = new SubjectDao();
         
@@ -42,7 +41,7 @@ public class TestListAction extends Action {
 
         TestDao tDao = new TestDao();
 
-        // 1. 科目・クラス検索 (f=sj) の場合
+        // 1. 科目・クラス検索 (f=sj)
         if ("sj".equals(f)) {
             String entYearStr = req.getParameter("f1");
             String classNum = req.getParameter("f2");
@@ -56,32 +55,45 @@ public class TestListAction extends Action {
                 
                 req.setAttribute("tests", subjects);
                 req.setAttribute("subject", subject);
+                
+                if (subjects == null || subjects.isEmpty()) {
+                    req.setAttribute("error", "検索条件に該当する成績情報が存在しません");
+                }
             } else {
                 req.setAttribute("error", "入学年度とクラスと科目を選択してください");
             }
+            req.getRequestDispatcher("test_list_subject.jsp").forward(req, res);
+            return;
         }
         
-        // 2. 学生番号検索 (f=st) の場合
+        // 2. 学生番号検索 (f=st)
         else if ("st".equals(f)) {
             String studentNo = req.getParameter("f4");
             
             if (studentNo != null && !studentNo.isEmpty()) {
                 StudentDao studentDao = new StudentDao();
-                Student student = studentDao.get(studentNo);
+                Student student = studentDao.get(studentNo); // ※DAOによっては studentDao.get(studentNo, teacher.getSchool()) になる場合があります
                 
                 if (student != null) {
-                    List<TestListStudent> studentTests = tDao.filter(student);
-                    req.setAttribute("studentTests", studentTests);
                     req.setAttribute("student", student);
+                    List<TestListStudent> studentTests = tDao.filter(student);
+                    
+                    if (studentTests != null && !studentTests.isEmpty()) {
+                        req.setAttribute("studentTests", studentTests);
+                    } else {
+                        req.setAttribute("error", "学生番号に該当する成績情報が存在しません");
+                    }
                 } else {
                     req.setAttribute("error", "学生情報が存在しませんでした");
                 }
             } else {
                 req.setAttribute("error", "学生番号を入力してください");
             }
+            req.getRequestDispatcher("test_list_student.jsp").forward(req, res);
+            return;
         }
 
-        // 成績参照画面へフォワード
+        // 初期表示 (パラメータなし)
         req.getRequestDispatcher("test_list.jsp").forward(req, res);
     }
 }

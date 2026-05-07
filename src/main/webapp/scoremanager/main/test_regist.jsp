@@ -1,12 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core"%>
 <c:import url="/common/base.jsp" >
-	<c:param name="title">
-		得点管理システム
-	</c:param>
-
-	<c:param name="scripts"></c:param>
-
+	<c:param name="title">得点管理システム</c:param>
 	<c:param name="content">
 		<section class="me-4">
 			<h2 class="h3 mb-3 fw-norma bg-secondary bg-opacity-10 py-2 px-4">成績管理</h2>
@@ -49,7 +44,7 @@
 						</select>
 					</div>
 					<div class="col-2 text-center pt-4">
-						<button class="btn btn-secondary" id="filter-button">検索</button>
+						<button type="submit" class="btn btn-secondary" id="filter-button">検索</button>
 					</div>
 					
 					<%-- エラーメッセージ表示エリア --%>
@@ -64,12 +59,12 @@
 					<div class="px-4 mb-2 fw-bold">科目：${subject.name} (${param.f4}回目)</div>
 					
 					<form action="TestRegistExecute.action" method="post">
-						<%-- 登録時に必要な科目コードと回数を隠しデータとして送信 --%>
-						<input type="hidden" name="subject_cd" value="${subject.cd}">
-						<input type="hidden" name="num" value="${param.f4}">
+						<%-- 設計書指定のname属性 (subject_cd, count) --%>
+						<input type="hidden" name="subject_cd" value="${param.f3}">
+						<input type="hidden" name="count" value="${param.f4}">
 						
-						<table class="table table-hover">
-							<tr>
+						<table class="table table-hover mx-3">
+							<tr class="table-light">
 								<th>入学年度</th>
 								<th>クラス</th>
 								<th>学生番号</th>
@@ -82,15 +77,16 @@
 									<td class="align-middle">${test.classNum}</td>
 									<td class="align-middle">
 										${test.student.no}
-										<input type="hidden" name="student_no" value="${test.student.no}">
+										<%-- 設計書指定のname属性 (regist) --%>
+										<input type="hidden" name="regist" value="${test.student.no}">
 									</td>
 									<td class="align-middle">${test.student.name}</td>
 									<td class="text-center">
-										<%-- 未登録（-1）の場合は空欄にする --%>
-										<input type="number" name="point" 
+										<%-- 設計書指定のname属性 (point_学生番号) --%>
+										<input type="text" name="point_${test.student.no}" 
 											   value="${test.point == -1 ? '' : test.point}" 
 											   class="form-control mx-auto text-center" 
-											   style="max-width: 100px;" min="0" max="100">
+											   style="max-width: 100px;">
 									</td>
 								</tr>
 							</c:forEach>
