@@ -20,7 +20,6 @@ public class TestDao extends Dao {
     /**
      * 【成績登録用】
      * 入学年度、クラス、科目、回数を指定して成績リストを取得する
-     * (引数が5つのバージョン)
      */
     public List<Test> filter(int entYear, String classNum, Subject subject, int num, School school) throws Exception {
         List<Test> list = new ArrayList<>();
@@ -71,7 +70,7 @@ public class TestDao extends Dao {
             throw e;
         } finally {
             if (statement != null) statement.close();
-            connection.close();
+            if (connection != null) connection.close();
         }
         return list;
     }
@@ -122,7 +121,7 @@ public class TestDao extends Dao {
             throw e;
         } finally {
             if (statement != null) statement.close();
-            connection.close();
+            if (connection != null) connection.close();
         }
         return new ArrayList<>(map.values());
     }
@@ -158,13 +157,14 @@ public class TestDao extends Dao {
             throw e;
         } finally {
             if (statement != null) statement.close();
-            connection.close();
+            if (connection != null) connection.close();
         }
         return list;
     }
 
     /**
-     * 成績保存メソッド
+     * 【成績保存メソッド】
+     * MERGE文とサブクエリを使用して、点数とクラス番号を同時に保存・更新する
      */
     public boolean save(List<Test> testList) throws Exception {
         Connection connection = getConnection();
@@ -172,7 +172,11 @@ public class TestDao extends Dao {
         int count = 0;
 
         try {
-            String sql = "MERGE INTO TEST (STUDENT_NO, SUBJECT_CD, SCHOOL_CD, NO, POINT) KEY(STUDENT_NO, SUBJECT_CD, NO) VALUES (?, ?, ?, ?, ?)";
+            // クラス番号をSTUDENTテーブルから取得しつつ保存/更新するMERGE文
+            String sql = "MERGE INTO TEST (STUDENT_NO, SUBJECT_CD, SCHOOL_CD, NO, POINT, CLASS_NUM) "
+                       + "KEY(STUDENT_NO, SUBJECT_CD, NO) "
+                       + "VALUES (?, ?, ?, ?, ?, (SELECT CLASS_NUM FROM STUDENT WHERE NO = ?))";
+            
             statement = connection.prepareStatement(sql);
 
             for (Test test : testList) {
@@ -181,16 +185,19 @@ public class TestDao extends Dao {
                 statement.setString(3, test.getSchool().getCd());
                 statement.setInt(4, test.getNo());
                 statement.setInt(5, test.getPoint());
+                // サブクエリ（クラス番号取得用）に渡す学生番号
+                statement.setString(6, test.getStudent().getNo()); 
                 statement.addBatch();
                 count++;
             }
             int[] results = statement.executeBatch();
             return results.length == count;
+            
         } catch (Exception e) {
             throw e;
         } finally {
             if (statement != null) statement.close();
-            connection.close();
+            if (connection != null) connection.close();
         }
     }
 }

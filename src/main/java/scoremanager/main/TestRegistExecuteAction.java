@@ -19,53 +19,65 @@ public class TestRegistExecuteAction extends Action {
         HttpSession session = req.getSession();
         Teacher teacher = (Teacher) session.getAttribute("user");
 
-        // 設計書に合わせたパラメータ名で受け取る
+        // 設計書の画面項目（test_regist.jsp）に合わせた name属性 で受け取る
         String[] studentNoArray = req.getParameterValues("regist"); // 学生番号リスト
         String subjectCd = req.getParameter("subject_cd"); // 科目コード
-        int num = Integer.parseInt(req.getParameter("count")); // 実施回数
+        String countStr = req.getParameter("count"); // 実施回数
 
+        if (studentNoArray == null || subjectCd == null || countStr == null) {
+            req.setAttribute("error", "登録処理に失敗しました。もう一度やり直してください。");
+            req.getRequestDispatcher("TestRegist.action").forward(req, res);
+            return;
+        }
+
+        int num = Integer.parseInt(countStr);
         List<Test> testList = new ArrayList<>();
-        
-        if (studentNoArray != null) {
-            for (String studentNo : studentNoArray) {
-                // 点数は個別のname属性 (point_学生番号) から取得
-                String pointStr = req.getParameter("point_" + studentNo);
-                
-                Test test = new Test();
-                
-                Student student = new Student();
-                student.setNo(studentNo);
-                test.setStudent(student);
 
-                Subject subject = new Subject();
-                subject.setCd(subjectCd);
-                test.setSubject(subject);
-                
-                test.setSchool(teacher.getSchool());
-                test.setNo(num);
-                
+        for (String studentNo : studentNoArray) {
+            String pointStr = req.getParameter("point_" + studentNo);
+            
+            // 空欄でなく、点数が入力されている場合のみ処理
+            if (pointStr != null && !pointStr.isEmpty()) {
                 try {
-                    // 入力がある場合のみ処理
-                    if (pointStr != null && !pointStr.isEmpty()) {
-                        int point = Integer.parseInt(pointStr);
-                        if (point >= 0 && point <= 100) {
-                            test.setPoint(point);
-                        } else {
-                            throw new Exception("点数範囲外");
-                        }
-                        testList.add(test); // 有効な点数のみリスト追加
+                    int point = Integer.parseInt(pointStr);
+                    
+                    if (point >= 0 && point <= 100) {
+                        Test test = new Test();
+                        
+                        // ★重要：ここで必ず学生情報をセットする（今回のエラーの解決ポイント）★
+                        Student student = new Student();
+                        student.setNo(studentNo);
+                        test.setStudent(student);
+
+                        Subject subject = new Subject();
+                        subject.setCd(subjectCd);
+                        test.setSubject(subject);
+                        
+                        test.setSchool(teacher.getSchool());
+                        test.setNo(num);
+                        test.setPoint(point);
+                        
+                        testList.add(test); // リストに追加
+                    } else {
+                        req.setAttribute("error", "0～100の範囲で数字を入力してください");
+                        req.getRequestDispatcher("TestRegist.action").forward(req, res);
+                        return;
                     }
-                } catch (Exception e) {
-                    req.setAttribute("error", "0～100の範囲で数字を入力してください");
+                } catch (NumberFormatException e) {
+                    req.setAttribute("error", "点数は数字で入力してください");
                     req.getRequestDispatcher("TestRegist.action").forward(req, res);
                     return;
                 }
             }
         }
 
-        TestDao tDao = new TestDao();
-        tDao.save(testList);
+        // 保存対象のデータが1件以上あればDaoで保存
+        if (!testList.isEmpty()) {
+            TestDao tDao = new TestDao();
+            tDao.save(testList);
+        }
 
+        // 完了画面へフォワード
         req.getRequestDispatcher("test_regist_done.jsp").forward(req, res);
     }
 }
