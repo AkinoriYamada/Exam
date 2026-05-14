@@ -258,5 +258,85 @@ public class ClassNumDao extends Dao {
 			return false;
 		}
 	}
+	/**
+	 * クラスの削除メソッド
+	 * @param class_num 削除するクラス番号
+	 * @param school 学校情報
+	 * @return 削除可否
+	 * @throws Exception
+	 */
+	public boolean delete(String class_num, School school) throws Exception {
+		Connection connection = getConnection();
+		PreparedStatement statement = null;
+		int count = 0;
+
+		try {
+			statement = connection.prepareStatement("delete from class_num where school_cd = ? and class_num = ?");
+			statement.setString(1, school.getCd());
+			statement.setString(2, class_num);
+			count = statement.executeUpdate();
+		} catch (Exception e) {
+			throw e;
+		} finally {
+			if (statement != null) {
+				try {
+					statement.close();
+				} catch (SQLException sqle) {
+					throw sqle;
+				}
+			}
+			if (connection != null) {
+				try {
+					connection.close();
+				} catch (SQLException sqle) {
+					throw sqle;
+				}
+			}
+		}
+
+		return count > 0;
+	}
+
+	/**
+	 * 削除前に「学生がそのクラスに所属しているか」をチェック
+	 * @param class_num クラス番号
+	 * @param school 学校情報
+	 * @return 学生が存在すればtrue
+	 * @throws Exception
+	 */
+	public boolean hasStudents(String class_num, School school) throws Exception {
+		Connection connection = getConnection();
+		PreparedStatement statement = null;
+		int count = 0;
+
+		try {
+			statement = connection.prepareStatement("select count(*) from student where school_cd = ? and class_num = ?");
+			statement.setString(1, school.getCd());
+			statement.setString(2, class_num);
+			ResultSet rs = statement.executeQuery();
+			if (rs.next()) {
+				count = rs.getInt(1);
+			}
+		} catch (Exception e) {
+			throw e;
+		} finally {
+			if (statement != null) {
+				try {
+					statement.close();
+				} catch (SQLException sqle) {
+					throw sqle;
+				}
+			}
+			if (connection != null) {
+				try {
+					connection.close();
+				} catch (SQLException sqle) {
+					throw sqle;
+				}
+			}
+		}
+
+		return count > 0;
+	}
 
 }
